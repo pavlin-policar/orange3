@@ -22,7 +22,7 @@ Signals
 
 -  **Learner**
 
-   A SGD regression learning algorithm with settings as specified in the dialog.
+   A SGD learning algorithm with settings as specified in the dialog.
 
 -  **Model**
 
@@ -39,11 +39,11 @@ The **Stochastic Gradient Descent** widget uses `stochastic gradient descent <ht
 1. Specify the name of the model. The default name is "SGD".
 2. Algorithm parameters. Classification loss function:
 
-   -  `Hinge <>`_ ()
+   -  `Hinge <>`_ (linear SVM)
    -  `Logistic Regression <>`_ ()
    -  `Modified Huber <>`_ ()
    -  `Squared Hinge <>`_ ()
-   -  `Perceptron <>`_ ()
+   -  `Perceptron <>`_ (linear loss used by the perceptron algorithm)
    -  `Squared Loss <https://en.wikipedia.org/wiki/Mean_squared_error#Regression>`_
       (fitted to ordinary least-squares)
    -  `Huber <https://en.wikipedia.org/wiki/Huber_loss>`_ (switches to
@@ -79,7 +79,7 @@ The **Stochastic Gradient Descent** widget uses `stochastic gradient descent <ht
    - Learning rate:
 
       - *Constant*: learning rate stays the same through all epochs (passes)
-      - *Optimal*: 
+      - *Optimal*: uses a heuristic proposed by Leon Bottou
       - `Inverse scaling <http://users.ics.aalto.fi/jhollmen/dippa/node22.html>`_: earning rate is inversely related to the number of iterations
 
    - Initial learning rate:
