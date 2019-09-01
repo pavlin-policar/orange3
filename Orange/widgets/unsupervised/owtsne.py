@@ -25,12 +25,20 @@ _MAX_PCA_COMPONENTS = 50
 _DEFAULT_PCA_COMPONENTS = 20
 
 
+SUPPORTED_METRICS = [
+    ("Euclidean", "euclidean"),
+    ("Manhattan", "manhattan"),
+    ("Cosine", "cosine"),
+]
+
+
 class Task(namespace):
     """Completely determines the t-SNE task spec and intermediate results."""
     data = None             # type: Optional[Table]
     normalize = None        # type: Optional[bool]
     pca_components = None   # type: Optional[int]
     pca_projection = None   # type: Optional[Table]
+    metric = None           # type: Optional[str]
     perplexity = None       # type: Optional[float]
     multiscale = None       # type: Optional[bool]
     exaggeration = None     # type: Optional[float]
@@ -52,7 +60,7 @@ def pca_preprocessing(data, n_components, normalize):
     return model(data)
 
 
-def prepare_tsne_obj(data, perplexity, multiscale, exaggeration):
+def prepare_tsne_obj(data, perplexity, multiscale, exaggeration, metric):
     # type: (Table, float, bool, float) -> manifold.TSNE
     """Automatically determine the best parameters for the given data set."""
     # Compute perplexity settings for multiscale
@@ -77,6 +85,7 @@ def prepare_tsne_obj(data, perplexity, multiscale, exaggeration):
     return manifold.TSNE(
         n_components=2,
         perplexity=perplexity,
+        metric=metric,
         multiscale=multiscale,
         early_exaggeration_iter=early_exagg_iter,
         n_iter=n_iter,
@@ -180,7 +189,7 @@ class TSNERunner:
 
         # Prepare the tsne object and add it to the spec
         task.tsne = prepare_tsne_obj(
-            task.data, task.perplexity, task.multiscale, task.exaggeration
+            task.data, task.perplexity, task.multiscale, task.exaggeration, task.metric
         )
 
         job_queue = []
@@ -262,6 +271,7 @@ class OWtSNE(OWDataProjectionWidget, ConcurrentWidgetMixin):
     exaggeration = ContextSetting(1)
     pca_components = ContextSetting(_DEFAULT_PCA_COMPONENTS)
     normalize = ContextSetting(True)
+    metric_idx = ContextSetting(0)
 
     GRAPH_CLASS = OWtSNEGraph
     graph = SettingProvider(OWtSNEGraph)
@@ -303,6 +313,13 @@ class OWtSNE(OWDataProjectionWidget, ConcurrentWidgetMixin):
             fieldGrowthPolicy=QFormLayout.AllNonFixedFieldsGrow,
             verticalSpacing=10,
         )
+
+        sbm = gui.hBox(self.controlArea, False, addToLayout=False)
+        self.metric_cbx = gui.comboBox(
+            sbm, self, "metric_idx", items=[m[0] for m in SUPPORTED_METRICS],
+            callback=self._invalidate_affinities,
+        )
+        form.addRow("Metric:", sbm)
 
         self.perplexity_spin = gui.spin(
             box, self, "perplexity", 1, 500, step=1, alignment=Qt.AlignRight,
@@ -508,6 +525,7 @@ class OWtSNE(OWDataProjectionWidget, ConcurrentWidgetMixin):
             affinities=self.affinities,
             tsne_embedding=self.tsne_embedding,
             iterations_done=self.iterations_done,
+            metric=SUPPORTED_METRICS[self.metric_idx][1],
         )
         return self.start(TSNERunner.run, task)
 
@@ -526,6 +544,7 @@ class OWtSNE(OWDataProjectionWidget, ConcurrentWidgetMixin):
     def __ensure_task_same_for_affinities(self, task: Task):
         assert task.perplexity == self.perplexity
         assert task.multiscale == self.multiscale
+        assert task.metric == SUPPORTED_METRICS[self.metric_idx][1]
 
     def __ensure_task_same_for_embedding(self, task: Task):
         assert task.exaggeration == self.exaggeration

@@ -10,6 +10,7 @@ from Orange.projection.manifold import TSNEModel
 from Orange.widgets.tests.base import (
     WidgetTest, WidgetOutputsTestMixin, ProjectionWidgetTestMixin
 )
+from Orange.widgets.tests.utils import simulate
 from Orange.widgets.unsupervised.owtsne import OWtSNE, TSNERunner, Task, prepare_tsne_obj
 
 
@@ -207,6 +208,31 @@ class TestOWtSNE(WidgetTest, ProjectionWidgetTestMixin, WidgetOutputsTestMixin):
         self.widget.run_button.clicked.emit()  # run with exaggeration 1
         self.wait_until_stop_blocking()
         _check_exaggeration(optimize, 3)
+
+    def test_metric(self):
+        self.send_signal(self.widget.Inputs.data, self.data)
+        self.widget.run_button.clicked.emit()  # stop initial run
+
+        def check_metric(mock, value):
+            _, _, kwargs = mock.mock_calls[-1]
+            self.assertIn("metric", kwargs)
+            self.assertEqual(kwargs["metric"], value)
+
+        with patch("Orange.projection.manifold.TSNE", wraps=DummyTSNE) as tsne:
+            simulate.combobox_activate_item(self.widget.metric_cbx, "Euclidean")
+            self.widget.run_button.clicked.emit()
+            self.wait_until_stop_blocking()
+            check_metric(tsne, "euclidean")
+
+            simulate.combobox_activate_item(self.widget.metric_cbx, "Manhattan")
+            self.widget.run_button.clicked.emit()
+            self.wait_until_stop_blocking()
+            check_metric(tsne, "manhattan")
+
+            simulate.combobox_activate_item(self.widget.metric_cbx, "Cosine")
+            self.widget.run_button.clicked.emit()
+            self.wait_until_stop_blocking()
+            check_metric(tsne, "cosine")
 
     def test_plot_once(self):
         """Test if data is plotted only once but committed on every input change"""

@@ -51,7 +51,7 @@ requirements:
     - commonmark
     - serverfiles
     - matplotlib    >=2.0.0
-    - opentsne      >=0.3.0
+    - opentsne      >=0.3.11
     - pandas
     - pyyaml
 
